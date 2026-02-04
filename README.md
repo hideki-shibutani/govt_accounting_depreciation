@@ -1,4 +1,4 @@
-![Update Status](https://img.shields.io/badge/Data%20Update-Weekly-blue)
+![Update Status](https://img.shields.io/badge/Data%20Update-Yearly-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 # 公共施設の老朽化データ：Japan Public Facilities Depreciation Data
