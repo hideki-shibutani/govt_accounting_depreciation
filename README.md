@@ -1,3 +1,6 @@
+![Update Status](https://img.shields.io/badge/Data%20Update-Weekly-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 # 公共施設の老朽化データ：Japan Public Facilities Depreciation Data
 　このリポジトリは、都道府県・市区町村が公表する「施設類型別ストック情報分析表」を用いて、施設別に、有形固定資産減価償却率を自動抽出して公開するものです。有形固定資産減価償却率は、以下の数式に基づいています。
 
