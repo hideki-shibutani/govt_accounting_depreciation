@@ -1,0 +1,34 @@
+{
+  "depreciation_rates": {
+    "metadata": {
+      "category": "Public Facilities",
+      "term_en": "Asset Depreciation Ratio",
+      "term_jp": "有形固定資産減価償却率"
+    },
+    "facilities": [
+      { "id": "overall", "jp": "全施設", "en": "Overall" },
+      { "id": "roads", "jp": "道路", "en": "Roads" },
+      { "id": "bridges_tunnels", "jp": "橋りょう・トンネル", "en": "Bridges & Tunnels" },
+      { "id": "public_housing", "jp": "公営住宅", "en": "Public Housing" },
+      { "id": "ports_harbors", "jp": "港湾・漁港", "en": "Ports & Harbors" },
+      { "id": "airports", "jp": "空港", "en": "Airports" },
+      { "id": "schools", "jp": "学校施設", "en": "Schools" },
+      { "id": "libraries", "jp": "図書館", "en": "Libraries" },
+      { "id": "museums", "jp": "博物館", "en": "Museums" },
+      { "id": "gyms_pools", "jp": "体育館・プール", "en": "Gyms & Pools" },
+      { "id": "stadiums_ballparks", "jp": "陸上競技場・野球場・球技場", "en": "Stadiums & Ballparks" },
+      { "id": "prefectural_halls", "jp": "県民会館", "en": "Prefectural Halls" },
+      { "id": "health_centers", "jp": "保健所", "en": "Health Centers" },
+      { "id": "research_institutes", "jp": "試験研究機関", "en": "Research Institutes" },
+      { "id": "police_facilities", "jp": "警察施設", "en": "Police Facilities" },
+      { "id": "govt_offices", "jp": "庁舎", "en": "Govt. Offices" },
+      { "id": "preschools_daycare", "jp": "認定こども園・幼稚園・保育所", "en": "Preschools & Daycare" },
+      { "id": "children_centers", "jp": "児童館", "en": "Children’s Centers" },
+      { "id": "community_centers", "jp": "公民館", "en": "Community Centers" },
+      { "id": "welfare_facilities", "jp": "福祉施設", "en": "Welfare Facilities" },
+      { "id": "civic_halls", "jp": "市民会館", "en": "Civic Halls" },
+      { "id": "waste_management", "jp": "一般廃棄物処理施設", "en": "Waste Management" },
+      { "id": "fire_facilities", "jp": "消防施設", "en": "Fire Stations" }
+    ]
+  }
+}
