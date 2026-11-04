@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+import argparse
+import pandas as pd
+
+IS_WINDOWS = (os.name == 'nt')
+if IS_WINDOWS:
+    ROOT = Path(__file__).resolve().parent.parent / "govt_accounting_depreciation"
+    RAW_DIR = Path(r"C:\xampp\htdocs\shibutani.org\data")
+else:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output-dir", help="出力先ディレクトリのパス")
+    args = parser.parse_args()
+    if args.output_dir:
+        ROOT = Path(args.output_dir)
+        RAW_DIR = Path("/var/www/shibutani.org/public_html/data/")
+    else:
+        sys.exit(1)
+
+PUBLISH_DIR = ROOT
+PUBLISH_DIR.mkdir(parents=True, exist_ok=True)
+FILES = sorted((RAW_DIR).glob("*.csv"))
+OUT_MAIN = ROOT / "facilities_depreciation.csv"
+
+import json
+with open(ROOT / "facilities_depreciation_terms.json", 'r', encoding='utf-8') as f:
+    terms = json.load(f)
+full_map = {f['jp']: f for f in terms['depreciation_rates']['facilities']}
+
+import re
+import os
+CODE_RE = re.compile(r"^[0-9]{6}\.csv$")
+def main():
+    print(RAW_DIR)
+    frames = []
+    files = sorted(RAW_DIR.glob("*.csv"))
+    print(len(files))
+    for fp in files:
+        if not CODE_RE.match(fp.name):
+            continue
+        df = pd.read_csv(fp, 
+                            header=0,
+                            dtype=str, 
+                        )
+        df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+        if df.empty:
+            continue
+        df["is_prefecture"] = df['団体コード'].str.contains(r'^\d{2}000\d$', na=False)
+        df = df[df['表'].str.contains(r'^(?:公会計指標分析・財政指標組合せ分析表|施設類型別ストック情報分析表)', na=False)]
+        df = df.drop(columns=['表'])
+        df = df[df['対象'] == '当該団体値']
+        df = df.drop(columns=['対象'])
+        df = df[df['指標'].str.endswith('有形固定資産減価償却率', na=False)]
+        df.loc[df['指標'] == '有形固定資産減価償却率', '指標'] = '有形固定資産減価償却率【全施設】'
+        df_long = df.melt(id_vars=["is_prefecture", "団体コード", "団体名", "都道府県", "指標"], var_name='Year', value_name='value')
+        temp_names = df_long['指標'].str.extract(r'【(.+?)】')[0]
+        df_long['facility_id'] = temp_names.map(lambda x: full_map[x]['id'] if x in full_map else None)
+        df_long['facility_en'] = temp_names.map(lambda x: full_map[x]['en'] if x in full_map else None)
+        frames.append(df_long)
+    if not frames:
+        raise RuntimeError("No matching indicators found")
+    df_long = pd.concat(frames, ignore_index=True)
+    df_long.to_csv(OUT_MAIN, index=False, encoding="utf-8-sig")
+    org_master = df_long[["団体コード", "is_prefecture", "団体名", "都道府県"]].drop_duplicates().sort_values("団体コード")
+    for p in [True, False]:
+        df = df_long[df_long["is_prefecture"] == p].drop(columns=["is_prefecture"])
+        sub_orgs = org_master[org_master["is_prefecture"] == p]
+        for facility_id, group_df in df.groupby('facility_id'):
+            file_name = f"{facility_id}.csv"
+            if p:
+                file_name = f"prefecture_{file_name}"
+                if not facility_id == "overall":
+                    file_name = f"prefecture/{file_name}"
+            else:
+                file_name = f"municipality_{file_name}"
+                if not facility_id == "overall":
+                    file_name = f"municipality/{file_name}"
+            file_path = os.path.join(PUBLISH_DIR, file_name)
+            group_df = group_df.drop(columns=['facility_id']).pivot_table(
+                index="団体コード", 
+                columns='Year', 
+                values='value',
+                aggfunc='first'
+            )
+            group_df.columns = [
+                f"{int(c) + 1}-03-31" if re.match(r'^[0-9]{4}$', str(c)) else c 
+                for c in group_df.columns
+            ]
+            output = sub_orgs.set_index("団体コード")[["団体名"]].join(
+                group_df.reindex(
+                    index=sub_orgs["団体コード"]
+                )
+            )
+            temp_path = file_path + ".tmp"
+            output.to_csv(temp_path, index=True, encoding='utf-8-sig')
+            if os.path.exists(file_path) and os.path.getsize(file_path) == os.path.getsize(temp_path):
+                os.remove(temp_path)
+            else:
+                os.replace(temp_path, file_path)
+    return None
+
+if __name__ == "__main__":
+    main()
+
