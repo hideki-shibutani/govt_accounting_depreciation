@@ -1,4 +1,5 @@
 import csv
+import gzip
 import subprocess
 import sys
 import tempfile
@@ -30,6 +31,42 @@ def make_raw(path, *, english=False):
 
 
 class GenerationTest(unittest.TestCase):
+    def test_float_year_headers_preserve_values_with_integer_header_files(self):
+        with tempfile.TemporaryDirectory(dir=TEMPORARY) as temporary:
+            root = Path(temporary)
+            make_raw(root, english=True)
+            file = root / "011002.csv"
+            text = file.read_text(encoding="utf-8-sig")
+            file.write_text(text.replace("2022,2023", "2022.0,2023.0"), encoding="utf-8-sig")
+            output = root / "input.csv.gz"
+            prepare_input(root, output)
+            with gzip.open(output, "rt", encoding="utf-8") as source:
+                rows = list(csv.DictReader(source))
+            actual = next(row for row in rows if row["団体コード"] == "011002" and row["指標"] == "有形固定資産減価償却率")
+            self.assertEqual(actual["2023"], "60.1")
+            library = next(row for row in rows if row["団体コード"] == "011002" and "図書館" in row["指標"])
+            self.assertEqual(library["2022"], "")
+            self.assertEqual(library["2023"], "70.2")
+
+    def test_duplicate_normalized_years_fail_before_output(self):
+        with tempfile.TemporaryDirectory(dir=TEMPORARY) as temporary:
+            root = Path(temporary)
+            make_raw(root)
+            file = root / "011002.csv"
+            file.write_text(file.read_text(encoding="utf-8-sig").replace("2022,2023", "2023,2023.0"), encoding="utf-8-sig")
+            with self.assertRaisesRegex(ValueError, "年度.*重複"):
+                prepare_input(root, root / "input.csv.gz")
+            self.assertFalse((root / "input.csv.gz").exists())
+
+    def test_fractional_year_header_is_rejected(self):
+        with tempfile.TemporaryDirectory(dir=TEMPORARY) as temporary:
+            root = Path(temporary)
+            make_raw(root)
+            file = root / "011002.csv"
+            file.write_text(file.read_text(encoding="utf-8-sig").replace("2022,2023", "2022,2023.5"), encoding="utf-8-sig")
+            with self.assertRaisesRegex(ValueError, "年度列の形式"):
+                prepare_input(root, root / "input.csv.gz")
+
     def test_english_and_legacy_inputs_produce_identical_public_input(self):
         with tempfile.TemporaryDirectory(dir=TEMPORARY) as temporary:
             root = Path(temporary)
